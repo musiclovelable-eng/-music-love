@@ -5,7 +5,8 @@ services:
     region: frankfurt
     plan: free
     buildCommand: npm ci --legacy-peer-deps && npm run build
-    startCommand: npm run start -- --hostname 0.0.0.0
+    # Render injects HOSTNAME=<container-id>; Next standalone must bind all interfaces.
+    startCommand: HOSTNAME=0.0.0.0 node .next/standalone/server.js
     healthCheckPath: /api/health
     envVars:
       - key: JWT_SECRET
