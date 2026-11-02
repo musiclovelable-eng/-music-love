@@ -3,30 +3,35 @@ services:
     name: music-love-label
     runtime: node
     region: frankfurt
-    plan: 1c-2g
+    plan: free
     buildCommand: npm ci --legacy-peer-deps && npm run build
     startCommand: npm run start -- --hostname 0.0.0.0
     healthCheckPath: /api/health
-    disk:
-      name: music-love-data
-      mountPath: /var/data
-      sizeGB: 10
     envVars:
       - key: JWT_SECRET
         generateValue: true
-      - key: TURSO_CONNECTION_URL
-        value: file:/var/data/music-love.db
+      - key: DATABASE_URL
+        fromDatabase:
+          name: music-love-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: disable
       - key: STORAGE_DRIVER
-        value: local
+        value: postgres
       - key: LOCAL_STORAGE_DIR
-        value: /var/data/storage
+        value: /tmp/music-love-storage
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
-      # Placeholders are required only while building legacy Supabase imports.
-      # Runtime uploads use the persistent local disk configured above.
       - key: NEXT_PUBLIC_SUPABASE_URL
         value: https://placeholder.supabase.co
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         value: placeholder
       - key: SUPABASE_SERVICE_ROLE_KEY
         value: placeholder
+
+databases:
+  - name: music-love-db
+    plan: free
+    databaseName: music_love
+    user: music_love
+    region: frankfurt

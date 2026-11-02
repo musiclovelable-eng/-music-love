@@ -4,7 +4,7 @@ import { sql } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    await db.run(sql`ALTER TABLE artists ADD COLUMN telegram_chat_id TEXT`);
+    await db.execute(sql`ALTER TABLE artists ADD COLUMN telegram_chat_id TEXT`);
   } catch {
     // Column may already exist
   }

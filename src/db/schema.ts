@@ -1,8 +1,8 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { pgTable, integer, text, serial, boolean } from 'drizzle-orm/pg-core';
 
 // Artists table
-export const artists = sqliteTable('artists', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const artists = pgTable('artists', {
+  id: serial('id').primaryKey(),
   uid: text('uid').notNull().unique(),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
@@ -10,26 +10,26 @@ export const artists = sqliteTable('artists', {
   surname: text('surname'),
   artistName: text('artist_name'),
   bio: text('bio'),
-  contractSigned: integer('contract_signed', { mode: 'boolean' }).default(false),
+  contractSigned: boolean('contract_signed').default(false),
   socialNetwork: text('social_network'),
   plan: text('plan').notNull().default('none'),
   role: text('role'),
-  isBlocked: integer('is_blocked', { mode: 'boolean' }).default(false),
-  isDeactivated: integer('is_deactivated', { mode: 'boolean' }).default(false),
+  isBlocked: boolean('is_blocked').default(false),
+  isDeactivated: boolean('is_deactivated').default(false),
   deactivationReason: text('deactivation_reason'),
-  isAdmin: integer('is_admin', { mode: 'boolean' }).default(false),
-  isManager: integer('is_manager', { mode: 'boolean' }).default(false),
-    isApproved: integer('is_approved', { mode: 'boolean' }).default(false),
-    requiresApproval: integer('requires_approval', { mode: 'boolean' }).default(false),
-    emailVerified: integer('email_verified', { mode: 'boolean' }).default(false),
+  isAdmin: boolean('is_admin').default(false),
+  isManager: boolean('is_manager').default(false),
+    isApproved: boolean('is_approved').default(false),
+    requiresApproval: boolean('requires_approval').default(false),
+    emailVerified: boolean('email_verified').default(false),
   verificationCode: text('verification_code'),
   accessRequestMessage: text('access_request_message'),
   howDidYouHear: text('how_did_you_hear'),
-  isFrozen: integer('is_frozen', { mode: 'boolean' }).default(false),
+  isFrozen: boolean('is_frozen').default(false),
   managerId: integer('manager_id').references(() => artists.id),
   theme: text('theme').notNull().default('light'),
-  showSnowflakes: integer('show_snowflakes', { mode: 'boolean' }).default(false),
-  showGarland: integer('show_garland', { mode: 'boolean' }).default(false),
+  showSnowflakes: boolean('show_snowflakes').default(false),
+  showGarland: boolean('show_garland').default(false),
   avatarUrl: text('avatar_url'),
   label: text('label').notNull().default('Music Love'),
   lastActiveAt: text('last_active_at'),
@@ -38,16 +38,16 @@ export const artists = sqliteTable('artists', {
 });
 
 // Password history table
-export const passwordHistory = sqliteTable('password_history', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const passwordHistory = pgTable('password_history', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   password: text('password').notNull(),
   createdAt: text('created_at').notNull(),
 });
 
 // Releases table
-export const releases = sqliteTable('releases', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const releases = pgTable('releases', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   type: text('type').notNull(),
   title: text('title').notNull(),
@@ -56,13 +56,13 @@ export const releases = sqliteTable('releases', {
   releaseDate: text('release_date'),
   startDate: text('start_date'),
   preorderDate: text('pre_order_date'),
-  isAsap: integer('is_asap', { mode: 'boolean' }).default(false),
+  isAsap: boolean('is_asap').default(false),
   mainArtist: text('main_artist').notNull(),
   additionalArtists: text('additional_artists'),
   genre: text('genre').notNull(),
   subgenre: text('subgenre'),
   promoText: text('promo_text'),
-  useEditorialPromo: integer('use_editorial_promo', { mode: 'boolean' }).default(false),
+  useEditorialPromo: boolean('use_editorial_promo').default(false),
   label: text('label').notNull().default('Music Love'),
   artistComment: text('artist_comment'),
   moderatorComment: text('moderator_comment'),
@@ -71,9 +71,9 @@ export const releases = sqliteTable('releases', {
   metadataLang: text('metadata_language'),
   partnerCode: text('partner_code'),
   rightsYear: text('copyright_year'),
-  earlyRussia: integer('early_russia', { mode: 'boolean' }).default(false),
-  earlyReleaseRussia: integer('early_release_russia', { mode: 'boolean' }).default(false),
-  realtimeDelivery: integer('realtime_delivery', { mode: 'boolean' }).default(false),
+  earlyRussia: boolean('early_russia').default(false),
+  earlyReleaseRussia: boolean('early_release_russia').default(false),
+  realtimeDelivery: boolean('realtime_delivery').default(false),
   distribution: text('distribution'),
   releaseVariant: text('release_variant'),
   localizationJson: text('localization_json'),
@@ -87,8 +87,8 @@ export const releases = sqliteTable('releases', {
 });
 
 // Tracks table
-export const tracks = sqliteTable('tracks', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const tracks = pgTable('tracks', {
+  id: serial('id').primaryKey(),
   releaseId: integer('release_id').notNull().references(() => releases.id),
   trackNumber: integer('track_number').notNull(),
   title: text('title').notNull(),
@@ -101,16 +101,16 @@ export const tracks = sqliteTable('tracks', {
   composer: text('composer'),
   lyrics: text('lyrics'),
   language: text('language'),
-  explicit: integer('explicit', { mode: 'boolean' }).default(false),
-  isLive: integer('is_live', { mode: 'boolean' }).default(false),
-  isCover: integer('is_cover', { mode: 'boolean' }).default(false),
-  isRemix: integer('is_remix', { mode: 'boolean' }).default(false),
-  isInstrumental: integer('is_instrumental', { mode: 'boolean' }).default(false),
+  explicit: boolean('explicit').default(false),
+  isLive: boolean('is_live').default(false),
+  isCover: boolean('is_cover').default(false),
+  isRemix: boolean('is_remix').default(false),
+  isInstrumental: boolean('is_instrumental').default(false),
   isrc: text('isrc'),
   partnerCode: text('partner_code'),
   previewStart: text('preview_start'),
-  instantGratification: integer('instant_gratification', { mode: 'boolean' }).default(false),
-  focusTrack: integer('focus_track', { mode: 'boolean' }).default(false),
+  instantGratification: boolean('instant_gratification').default(false),
+  focusTrack: boolean('focus_track').default(false),
   version: text('version'),
   copyrightShare: text('copyright_share'),
   relatedRightsShare: text('related_rights_share'),
@@ -121,19 +121,19 @@ export const tracks = sqliteTable('tracks', {
 });
 
 // News table
-export const news = sqliteTable('news', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const news = pgTable('news', {
+  id: serial('id').primaryKey(),
   title: text('title').notNull(),
   content: text('content').notNull(),
   links: text('links'),
   createdBy: integer('created_by').notNull().references(() => artists.id),
   createdAt: text('created_at').notNull(),
-  published: integer('published', { mode: 'boolean' }).default(true),
+  published: boolean('published').default(true),
 });
 
 // FAQ table
-export const faq = sqliteTable('faq', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const faq = pgTable('faq', {
+  id: serial('id').primaryKey(),
   question: text('question').notNull(),
   answer: text('answer').notNull(),
   orderIndex: integer('order_index').default(0),
@@ -141,8 +141,8 @@ export const faq = sqliteTable('faq', {
 });
 
 // Add new lyrics_submissions table with complete structure
-export const lyricsSubmissions = sqliteTable('lyrics_submissions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const lyricsSubmissions = pgTable('lyrics_submissions', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   releaseId: integer('release_id').references(() => releases.id),
   trackName: text('track_name').notNull(),
@@ -155,8 +155,8 @@ export const lyricsSubmissions = sqliteTable('lyrics_submissions', {
 });
 
 // Artist analytics table
-export const artistAnalytics = sqliteTable('artist_analytics', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const artistAnalytics = pgTable('artist_analytics', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   date: text('date').notNull(), // ISO date string YYYY-MM-DD
   totalStreams: integer('total_streams').notNull().default(0),
@@ -168,18 +168,18 @@ export const artistAnalytics = sqliteTable('artist_analytics', {
 });
 
 // User settings table
-export const userSettings = sqliteTable('user_settings', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const userSettings = pgTable('user_settings', {
+  id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => artists.id).unique(),
   theme: text('theme').notNull().default('light'),
-  snowflakesEnabled: integer('snowflakes_enabled', { mode: 'boolean' }).default(false),
+  snowflakesEnabled: boolean('snowflakes_enabled').default(false),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
 
 // Add new release_history table at the end
-export const releaseHistory = sqliteTable('release_history', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const releaseHistory = pgTable('release_history', {
+  id: serial('id').primaryKey(),
   releaseId: integer('release_id').notNull().references(() => releases.id),
   action: text('action').notNull(),
   field: text('field'),
@@ -191,8 +191,8 @@ export const releaseHistory = sqliteTable('release_history', {
 });
 
 // Add new manager_actions table at the end
-export const managerActions = sqliteTable('manager_actions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const managerActions = pgTable('manager_actions', {
+  id: serial('id').primaryKey(),
   managerId: integer('manager_id').notNull().references(() => artists.id),
   action: text('action').notNull(),
   targetId: integer('target_id'),
@@ -201,8 +201,8 @@ export const managerActions = sqliteTable('manager_actions', {
 });
 
 // Add new tickets table
-export const tickets = sqliteTable('tickets', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const tickets = pgTable('tickets', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   subject: text('subject').notNull(),
   initialMessage: text('initial_message').notNull(),
@@ -215,8 +215,8 @@ export const tickets = sqliteTable('tickets', {
 });
 
 // Add new ticket_messages table
-export const ticketMessages = sqliteTable('ticket_messages', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const ticketMessages = pgTable('ticket_messages', {
+  id: serial('id').primaryKey(),
   ticketId: integer('ticket_id').notNull().references(() => tickets.id),
   senderId: integer('sender_id').notNull(),
   senderType: text('sender_type').notNull(),
@@ -226,8 +226,8 @@ export const ticketMessages = sqliteTable('ticket_messages', {
 });
 
 // Add new ticket_notes table
-export const ticketNotes = sqliteTable('ticket_notes', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const ticketNotes = pgTable('ticket_notes', {
+  id: serial('id').primaryKey(),
   ticketId: integer('ticket_id').notNull().references(() => tickets.id),
   note: text('note').notNull(),
   createdAt: text('created_at').notNull(),
@@ -236,8 +236,8 @@ export const ticketNotes = sqliteTable('ticket_notes', {
 });
 
 // Ticket attachments table
-export const ticketAttachments = sqliteTable('ticket_attachments', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const ticketAttachments = pgTable('ticket_attachments', {
+  id: serial('id').primaryKey(),
   ticketId: integer('ticket_id').notNull().references(() => tickets.id),
   messageId: integer('message_id').references(() => ticketMessages.id),
   fileName: text('file_name').notNull(),
@@ -250,8 +250,8 @@ export const ticketAttachments = sqliteTable('ticket_attachments', {
 });
 
 // Artist wallets table
-export const artistWallets = sqliteTable('artist_wallets', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const artistWallets = pgTable('artist_wallets', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id).unique(),
   balanceRub: text('balance_rub').notNull().default('0'),
   balanceUsd: text('balance_usd').notNull().default('0'),
@@ -260,8 +260,8 @@ export const artistWallets = sqliteTable('artist_wallets', {
 });
 
 // Financial reports table
-export const financialReports = sqliteTable('financial_reports', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const financialReports = pgTable('financial_reports', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   title: text('title').notNull(),
   periodStart: text('period_start').notNull(),
@@ -274,15 +274,15 @@ export const financialReports = sqliteTable('financial_reports', {
   fileUrl: text('file_url'),
   fileName: text('file_name'),
   details: text('details'),
-  isRoyalty: integer('is_royalty', { mode: 'boolean' }).default(true),
+  isRoyalty: boolean('is_royalty').default(true),
   agreedAt: text('agreed_at'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
 
 // Wallet transactions table
-export const walletTransactions = sqliteTable('wallet_transactions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const walletTransactions = pgTable('wallet_transactions', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   type: text('type').notNull(),
   amountRub: text('amount_rub').notNull().default('0'),
@@ -294,8 +294,8 @@ export const walletTransactions = sqliteTable('wallet_transactions', {
 });
 
 // Artist payment details table
-export const artistPaymentDetails = sqliteTable('artist_payment_details', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const artistPaymentDetails = pgTable('artist_payment_details', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id).unique(),
   fullName: text('full_name').notNull(),
   cardNumber: text('card_number').notNull(),
@@ -307,44 +307,44 @@ export const artistPaymentDetails = sqliteTable('artist_payment_details', {
 
 
 // Admin permissions table - granular permissions for sub-admins
-export const adminPermissions = sqliteTable('admin_permissions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const adminPermissions = pgTable('admin_permissions', {
+  id: serial('id').primaryKey(),
   adminId: integer('admin_id').notNull().references(() => artists.id).unique(),
   // Section visibility
-  canAccessDashboard: integer('can_access_dashboard', { mode: 'boolean' }).default(true),
-  canAccessArtists: integer('can_access_artists', { mode: 'boolean' }).default(true),
-  canAccessReleases: integer('can_access_releases', { mode: 'boolean' }).default(true),
-  canAccessWallets: integer('can_access_wallets', { mode: 'boolean' }).default(false),
-  canAccessNews: integer('can_access_news', { mode: 'boolean' }).default(true),
-  canAccessFaq: integer('can_access_faq', { mode: 'boolean' }).default(true),
-  canAccessTickets: integer('can_access_tickets', { mode: 'boolean' }).default(true),
-  canAccessPendingUsers: integer('can_access_pending_users', { mode: 'boolean' }).default(true),
-  canAccessLyrics: integer('can_access_lyrics', { mode: 'boolean' }).default(true),
-  canAccessStaff: integer('can_access_staff', { mode: 'boolean' }).default(false),
+  canAccessDashboard: boolean('can_access_dashboard').default(true),
+  canAccessArtists: boolean('can_access_artists').default(true),
+  canAccessReleases: boolean('can_access_releases').default(true),
+  canAccessWallets: boolean('can_access_wallets').default(false),
+  canAccessNews: boolean('can_access_news').default(true),
+  canAccessFaq: boolean('can_access_faq').default(true),
+  canAccessTickets: boolean('can_access_tickets').default(true),
+  canAccessPendingUsers: boolean('can_access_pending_users').default(true),
+  canAccessLyrics: boolean('can_access_lyrics').default(true),
+  canAccessStaff: boolean('can_access_staff').default(false),
   // Action permissions
-  canEditReleases: integer('can_edit_releases', { mode: 'boolean' }).default(true),
-  canDeleteReleases: integer('can_delete_releases', { mode: 'boolean' }).default(false),
-  canDownloadFiles: integer('can_download_files', { mode: 'boolean' }).default(true),
-  canApproveReleases: integer('can_approve_releases', { mode: 'boolean' }).default(true),
-  canEditArtists: integer('can_edit_artists', { mode: 'boolean' }).default(true),
-  canDeleteArtists: integer('can_delete_artists', { mode: 'boolean' }).default(false),
-  canManagePayouts: integer('can_manage_payouts', { mode: 'boolean' }).default(false),
-  canManageUsers: integer('can_manage_users', { mode: 'boolean' }).default(true),
+  canEditReleases: boolean('can_edit_releases').default(true),
+  canDeleteReleases: boolean('can_delete_releases').default(false),
+  canDownloadFiles: boolean('can_download_files').default(true),
+  canApproveReleases: boolean('can_approve_releases').default(true),
+  canEditArtists: boolean('can_edit_artists').default(true),
+  canDeleteArtists: boolean('can_delete_artists').default(false),
+  canManagePayouts: boolean('can_manage_payouts').default(false),
+  canManageUsers: boolean('can_manage_users').default(true),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
 
 // Bot settings table — stores global on/off flag and other config
-export const botSettings = sqliteTable('bot_settings', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const botSettings = pgTable('bot_settings', {
+  id: serial('id').primaryKey(),
   key: text('key').notNull().unique(), // e.g. 'telegram_enabled'
   value: text('value').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
 
 // Pitching submissions table
-export const pitchings = sqliteTable('pitchings', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const pitchings = pgTable('pitchings', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull().references(() => artists.id),
   releaseId: integer('release_id').notNull().references(() => releases.id),
   promoText: text('promo_text').notNull(),
@@ -355,8 +355,8 @@ export const pitchings = sqliteTable('pitchings', {
 });
 
 // Verifications table
-export const verifications = sqliteTable('verifications', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const verifications = pgTable('verifications', {
+  id: serial('id').primaryKey(),
   artistId: integer('artist_id').notNull(),
   role: text('role').notNull().default('artist'),
   contractType: text('contract_type'),
@@ -365,8 +365,8 @@ export const verifications = sqliteTable('verifications', {
   passportData: text('passport_data'),
   addressData: text('address_data'),
   bankData: text('bank_data'),
-  npdConfirmed: integer('npd_confirmed', { mode: 'boolean' }).default(false),
-  finalConfirmed: integer('final_confirmed', { mode: 'boolean' }).default(false),
+  npdConfirmed: boolean('npd_confirmed').default(false),
+  finalConfirmed: boolean('final_confirmed').default(false),
   status: text('status').notNull().default('draft'), // draft | submitted | approved | rejected
   submittedAt: text('submitted_at'),
   reviewedAt: text('reviewed_at'),

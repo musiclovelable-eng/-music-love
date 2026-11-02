@@ -11,7 +11,9 @@ import {
   getLocalFileUrl,
   getLocalObjectPath,
   getSupabaseDownloadUrl,
+  ensurePostgresObjectCached,
   isLocalStorage,
+  isPostgresStorage,
   normalizeStorageKey,
   STORAGE_BUCKETS,
   type StorageBucket,
@@ -153,6 +155,11 @@ async function serveFile(
             : 'private, no-store',
         },
       });
+    }
+
+    if (isPostgresStorage()) {
+      const cached = await ensurePostgresObjectCached(bucket, key);
+      if (!cached) return responseError('Файл не найден', 404);
     }
 
     const filePath = getLocalObjectPath(bucket, key);

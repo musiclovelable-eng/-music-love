@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
       .where(and(
         eq(artists.isApproved, false),
         eq(artists.requiresApproval, true)
-      ))
-      .all();
+      ));
 
     return NextResponse.json({ users: pendingUsers });
   } catch (error) {

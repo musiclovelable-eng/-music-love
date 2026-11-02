@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
+import { Pool } from 'pg';
 import { createWriteStream } from 'node:fs';
-import { mkdir, rename, unlink } from 'node:fs/promises';
+import { access, mkdir, rename, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -26,8 +27,13 @@ export function isPublicStorageBucket(bucket: StorageBucket) {
   return PUBLIC_STORAGE_BUCKETS.has(bucket);
 }
 
+export function isPostgresStorage() {
+  return process.env.STORAGE_DRIVER?.trim().toLowerCase() === 'postgres';
+}
+
 export function isLocalStorage() {
-  return process.env.STORAGE_DRIVER?.trim().toLowerCase() === 'local';
+  const driver = process.env.STORAGE_DRIVER?.trim().toLowerCase();
+  return driver === 'local' || driver === 'postgres';
 }
 
 export function getLocalStorageRoot() {
@@ -74,6 +80,100 @@ function encodeObjectPath(key: string) {
 
 export function getLocalFileUrl(bucket: StorageBucket, key: string) {
   return `/api/files/${bucket}/${encodeObjectPath(key)}`;
+}
+
+const globalForStorage = globalThis as unknown as {
+  _musicLoveStoragePool: Pool | undefined;
+  _musicLoveStorageTable: Promise<void> | undefined;
+};
+
+function getPostgresPool() {
+  if (!globalForStorage._musicLoveStoragePool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('DATABASE_URL is not configured');
+    globalForStorage._musicLoveStoragePool = new Pool({
+      connectionString,
+      max: 3,
+      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 30000,
+      ssl: process.env.DATABASE_SSL === 'disable'
+        ? undefined
+        : { rejectUnauthorized: false },
+    });
+  }
+  return globalForStorage._musicLoveStoragePool;
+}
+
+async function ensurePostgresStorageTable() {
+  if (!globalForStorage._musicLoveStorageTable) {
+    globalForStorage._musicLoveStorageTable = getPostgresPool().query(`
+      CREATE TABLE IF NOT EXISTS music_love_storage (
+        bucket text NOT NULL,
+        object_key text NOT NULL,
+        data bytea NOT NULL,
+        mime_type text NOT NULL,
+        size_bytes bigint NOT NULL,
+        created_at text NOT NULL,
+        PRIMARY KEY (bucket, object_key)
+      )
+    `).then(() => undefined).catch((error) => {
+      globalForStorage._musicLoveStorageTable = undefined;
+      throw error;
+    });
+  }
+  return globalForStorage._musicLoveStorageTable;
+}
+
+async function writeObjectCache(bucket: StorageBucket, key: string, data: Buffer) {
+  const destination = getLocalObjectPath(bucket, key);
+  await mkdir(path.dirname(destination), { recursive: true });
+  const temporary = `${destination}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, data, { flag: 'wx' });
+    await rename(temporary, destination);
+  } catch (error) {
+    await unlink(temporary).catch(() => undefined);
+    throw error;
+  }
+  return destination;
+}
+
+async function uploadToPostgres(bucket: StorageBucket, key: string, file: File) {
+  await ensurePostgresStorageTable();
+  const data = Buffer.from(await file.arrayBuffer());
+  await getPostgresPool().query(
+    `INSERT INTO music_love_storage
+      (bucket, object_key, data, mime_type, size_bytes, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (bucket, object_key) DO UPDATE SET
+      data = EXCLUDED.data,
+      mime_type = EXCLUDED.mime_type,
+      size_bytes = EXCLUDED.size_bytes`,
+    [bucket, key, data, file.type || 'application/octet-stream', data.byteLength, new Date().toISOString()]
+  );
+  await writeObjectCache(bucket, key, data);
+  return getLocalFileUrl(bucket, key);
+}
+
+export async function ensurePostgresObjectCached(bucket: StorageBucket, key: string) {
+  if (!isPostgresStorage()) return null;
+  const normalizedKey = normalizeStorageKey(key);
+  const destination = getLocalObjectPath(bucket, normalizedKey);
+  try {
+    await access(destination);
+    return destination;
+  } catch {
+    // The ephemeral cache may be empty after a free-instance restart.
+  }
+
+  await ensurePostgresStorageTable();
+  const result = await getPostgresPool().query(
+    'SELECT data FROM music_love_storage WHERE bucket = $1 AND object_key = $2 LIMIT 1',
+    [bucket, normalizedKey]
+  );
+  const data = result.rows[0]?.data as Buffer | undefined;
+  if (!data) return null;
+  return writeObjectCache(bucket, normalizedKey, data);
 }
 
 function getSupabaseBaseUrl() {
@@ -194,9 +294,11 @@ export async function uploadToStorage(
   file: File
 ) {
   const normalizedKey = normalizeStorageKey(key);
-  const url = isLocalStorage()
-    ? await uploadToLocalStorage(bucket, normalizedKey, file)
-    : await uploadToSupabase(bucket, normalizedKey, file);
+  const url = isPostgresStorage()
+    ? await uploadToPostgres(bucket, normalizedKey, file)
+    : isLocalStorage()
+      ? await uploadToLocalStorage(bucket, normalizedKey, file)
+      : await uploadToSupabase(bucket, normalizedKey, file);
 
   return { url, key: normalizedKey };
 }
@@ -234,6 +336,18 @@ function extractSupabaseKeyFromUrl(bucket: StorageBucket, value: string) {
 
 export async function deleteFromStorage(bucket: StorageBucket, urlOrKey: string) {
   try {
+    if (isPostgresStorage()) {
+      const key = extractLocalKeyFromUrl(bucket, urlOrKey);
+      if (!key) return false;
+      await ensurePostgresStorageTable();
+      const result = await getPostgresPool().query(
+        'DELETE FROM music_love_storage WHERE bucket = $1 AND object_key = $2',
+        [bucket, key]
+      );
+      await unlink(getLocalObjectPath(bucket, key)).catch(() => undefined);
+      return (result.rowCount || 0) > 0;
+    }
+
     if (isLocalStorage()) {
       const key = extractLocalKeyFromUrl(bucket, urlOrKey);
       if (!key) return false;

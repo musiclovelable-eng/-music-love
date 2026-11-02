@@ -1,31 +1,36 @@
-
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '@/db/schema';
 
-// Singleton pattern — prevents connection accumulation on each request in Next.js
 const globalForDb = globalThis as unknown as {
-  _tursoClient: ReturnType<typeof createClient> | undefined;
+  _pgPool: Pool | undefined;
   _drizzleDb: ReturnType<typeof drizzle> | undefined;
 };
 
-function getClient() {
-  if (!globalForDb._tursoClient) {
-    globalForDb._tursoClient = createClient({
-      url: process.env.TURSO_CONNECTION_URL!,
-      authToken: process.env.TURSO_AUTH_TOKEN!,
+function getPool() {
+  if (!globalForDb._pgPool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('DATABASE_URL is not configured');
+
+    globalForDb._pgPool = new Pool({
+      connectionString,
+      max: 5,
+      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 30000,
+      ssl: process.env.DATABASE_SSL === 'disable'
+        ? undefined
+        : { rejectUnauthorized: false },
     });
   }
-  return globalForDb._tursoClient;
+  return globalForDb._pgPool;
 }
 
 function getDb() {
   if (!globalForDb._drizzleDb) {
-    globalForDb._drizzleDb = drizzle(getClient(), { schema });
+    globalForDb._drizzleDb = drizzle(getPool(), { schema });
   }
   return globalForDb._drizzleDb;
 }
 
 export const db = getDb();
-
 export type Database = typeof db;
