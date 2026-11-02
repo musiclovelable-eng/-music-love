@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { hasAdvancedFeatures, getUserPlanName } from "@/lib/permissions";
 import { ARTIST_VERIFICATION_REQUIRED } from "@/lib/verification";
+import { isDirectCloudStorage, uploadFileToCloud } from "@/lib/client-upload";
 
 export default function ArtistProfile() {
   const { user, loading, refreshUser } = useUser();
@@ -66,9 +67,26 @@ export default function ArtistProfile() {
     if (!file) return;
     setIsUploadingAvatar(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/user/avatar", { method: "POST", body: fd });
+      let res: Response;
+      if (isDirectCloudStorage) {
+        const uploaded = await uploadFileToCloud({ bucket: "avatars", file });
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        const token = localStorage.getItem("bearer_token");
+        if (token) headers.Authorization = `Bearer ${token}`;
+        res = await fetch("/api/user/avatar", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            key: uploaded.key,
+            fileSize: uploaded.size,
+            fileType: uploaded.fileType,
+          }),
+        });
+      } else {
+        const fd = new FormData();
+        fd.append("file", file);
+        res = await fetch("/api/user/avatar", { method: "POST", body: fd });
+      }
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Ошибка загрузки");

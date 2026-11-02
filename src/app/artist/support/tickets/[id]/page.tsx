@@ -24,6 +24,7 @@ import {
   Download,
   Loader2,
 } from "lucide-react";
+import { isDirectCloudStorage, uploadFileToCloud } from "@/lib/client-upload";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -195,28 +196,46 @@ export default function TicketDetailPage() {
     const token = localStorage.getItem("bearer_token");
     
     for (const file of selectedFiles) {
-      const formData = new FormData();
-      formData.append("file", file);
-      if (messageId) {
-        formData.append("messageId", messageId.toString());
-      }
-      
       try {
-        const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-        
+        let response: Response;
+        if (isDirectCloudStorage) {
+          const uploaded = await uploadFileToCloud({
+            bucket: "ticket-attachments",
+            file,
+            ticketId,
+          });
+          response = await fetch(`/api/tickets/${ticketId}/attachments`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              key: uploaded.key,
+              fileName: uploaded.fileName,
+              fileSize: uploaded.size,
+              fileType: uploaded.fileType,
+              messageId,
+            }),
+          });
+        } else {
+          const formData = new FormData();
+          formData.append("file", file);
+          if (messageId) formData.append("messageId", messageId.toString());
+          response = await fetch(`/api/tickets/${ticketId}/attachments`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+        }
+
         if (!response.ok) {
           const data = await response.json();
           toast.error(data.error || `Ошибка загрузки ${file.name}`);
         }
       } catch (error) {
         console.error("Error uploading file:", error);
-        toast.error(`Ошибка загрузки ${file.name}`);
+        toast.error(error instanceof Error ? error.message : `Ошибка загрузки ${file.name}`);
       }
     }
   };

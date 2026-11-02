@@ -8,7 +8,9 @@
         "start": "next start",
         "lint": "next lint",
         "artist:kurmur": "node scripts/set-kurmur-credentials.mjs",
-        "admin:musiclove": "node scripts/set-admin-credentials.mjs"
+        "admin:musiclove": "node scripts/set-admin-credentials.mjs",
+        "storage:supabase": "node scripts/setup-supabase-storage.mjs",
+        "migrate:turso": "node scripts/migrate-sqlite-to-turso.mjs"
     },
     "dependencies": {
         "@babel/parser": "^7.28.5",

@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
 import { hasAdvancedFeatures } from "@/lib/permissions";
 import { DatePicker } from "@/components/ui/date-picker";
+import { isDirectCloudStorage, uploadFileToCloud } from "@/lib/client-upload";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -496,14 +497,22 @@ export default function ArtistUpload() {
   const uploadCover = async (file: File, localPreview: string) => {
     setCoverUploading(true); setCoverProgress(0);
     try {
-      const fd = new FormData(); fd.append("file", file);
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener("progress", ev => { if (ev.lengthComputable) setCoverProgress(Math.round(ev.loaded / ev.total * 100)); });
-      const res = await new Promise<any>((resolve, reject) => {
-        xhr.onload = () => { try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid response")); } };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.timeout = 120000; xhr.open("POST", "/api/releases/upload-cover"); xhr.send(fd);
-      });
+      const res = isDirectCloudStorage
+        ? await uploadFileToCloud({
+            bucket: "release-covers",
+            file,
+            onProgress: setCoverProgress,
+          })
+        : await (async () => {
+            const fd = new FormData(); fd.append("file", file);
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener("progress", ev => { if (ev.lengthComputable) setCoverProgress(Math.round(ev.loaded / ev.total * 100)); });
+            return new Promise<any>((resolve, reject) => {
+              xhr.onload = () => { try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid response")); } };
+              xhr.onerror = () => reject(new Error("Network error"));
+              xhr.timeout = 120000; xhr.open("POST", "/api/releases/upload-cover"); xhr.send(fd);
+            });
+          })();
       if (res.success && res.url) { setCoverUrl(res.url); URL.revokeObjectURL(localPreview); setCoverPreview(res.url); }
       else { setError(res.error || "Ошибка загрузки обложки"); setCoverPreview(""); }
     } catch (e: any) { setError(e?.message || "Ошибка загрузки обложки"); setCoverPreview(""); }
@@ -520,18 +529,30 @@ export default function ArtistUpload() {
   const handleTrackFile = async (trackId: string, file: File) => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "";
     if (!["wav", "flac", "mp3", "aac"].includes(ext)) { setError("Форматы: WAV, FLAC, MP3, AAC"); return; }
-    if (file.size > 1024 * 1024 * 1024) { setError("Максимальный размер: 1 ГБ"); return; }
+    const maxTrackSize = isDirectCloudStorage ? 50 * 1024 * 1024 : 1024 * 1024 * 1024;
+    if (file.size > maxTrackSize) {
+      setError(isDirectCloudStorage ? "На бесплатном хранилище максимальный размер: 50 МБ" : "Максимальный размер: 1 ГБ");
+      return;
+    }
     setError("");
     setTracks(p => p.map(t => t.id === trackId ? { ...t, fileName: file.name, fileSize: file.size, uploadProgress: 0, isUploaded: false, url: "" } : t));
     try {
-      const fd = new FormData(); fd.append("file", file);
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener("progress", ev => { if (ev.lengthComputable) setTracks(p => p.map(t => t.id === trackId ? { ...t, uploadProgress: Math.round(ev.loaded / ev.total * 100) } : t)); });
-      const res = await new Promise<any>((resolve, reject) => {
-        xhr.onload = () => { try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid response")); } };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.timeout = 300000; xhr.open("POST", "/api/releases/upload-track"); xhr.send(fd);
-      });
+      const res = isDirectCloudStorage
+        ? await uploadFileToCloud({
+            bucket: "release-tracks",
+            file,
+            onProgress: percent => setTracks(p => p.map(t => t.id === trackId ? { ...t, uploadProgress: percent } : t)),
+          })
+        : await (async () => {
+            const fd = new FormData(); fd.append("file", file);
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener("progress", ev => { if (ev.lengthComputable) setTracks(p => p.map(t => t.id === trackId ? { ...t, uploadProgress: Math.round(ev.loaded / ev.total * 100) } : t)); });
+            return new Promise<any>((resolve, reject) => {
+              xhr.onload = () => { try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("Invalid response")); } };
+              xhr.onerror = () => reject(new Error("Network error"));
+              xhr.timeout = 300000; xhr.open("POST", "/api/releases/upload-track"); xhr.send(fd);
+            });
+          })();
       if (res.success && res.url) {
         setTracks(p => p.map(t => t.id === trackId ? { ...t, url: res.url, isUploaded: true, uploadProgress: undefined, title: t.title || file.name.replace(/\.[^/.]+$/, "") } : t));
       } else {

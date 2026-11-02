@@ -3,13 +3,41 @@ import { getSession } from '@/lib/auth';
 import { db } from '@/db';
 import { artists } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { uploadToStorage } from '@/lib/storage';
+import {
+  getStorageFileUrl,
+  isLocalStorage,
+  normalizeStorageKey,
+  uploadToStorage,
+} from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      if (isLocalStorage()) {
+        return NextResponse.json({ error: 'Облачная загрузка не включена' }, { status: 409 });
+      }
+      const body = await request.json();
+      const key = normalizeStorageKey(String(body.key || ''));
+      const fileSize = Number(body.fileSize);
+      const fileType = String(body.fileType || '').toLowerCase();
+      if (!key.startsWith(`${session.userId}/`)) {
+        return NextResponse.json({ error: 'Некорректный файл' }, { status: 400 });
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(fileType)) {
+        return NextResponse.json({ error: 'Допустимые форматы: JPG, PNG, WebP' }, { status: 400 });
+      }
+      if (!Number.isSafeInteger(fileSize) || fileSize <= 0 || fileSize > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Максимальный размер: 5 МБ' }, { status: 400 });
+      }
+
+      const publicUrl = getStorageFileUrl('avatars', key);
+      await db.update(artists).set({ avatarUrl: publicUrl }).where(eq(artists.id, session.userId));
+      return NextResponse.json({ success: true, avatarUrl: publicUrl });
     }
 
     const formData = await request.formData();

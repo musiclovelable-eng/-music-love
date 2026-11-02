@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { isDirectCloudStorage, uploadFileToCloud } from "@/lib/client-upload";
 
 interface Artist {
   id: number;
@@ -175,15 +176,19 @@ export default function AdminArtistWalletPage() {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(`/api/admin/wallets/${artistId}/reports/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Ошибка загрузки файла");
+      let data: { url: string; error?: string };
+      if (isDirectCloudStorage) {
+        data = await uploadFileToCloud({ bucket: "reports", file, artistId });
+      } else {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch(`/api/admin/wallets/${artistId}/reports/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Ошибка загрузки файла");
+      }
 
       setReportForm(prev => ({
         ...prev,

@@ -3,7 +3,12 @@ import { getSessionFromRequest } from '@/lib/auth';
 import { db } from '@/db';
 import { tickets, ticketAttachments } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
-import { uploadToStorage } from '@/lib/storage';
+import {
+  getStorageFileUrl,
+  isLocalStorage,
+  normalizeStorageKey,
+  uploadToStorage,
+} from '@/lib/storage';
 
 async function uploadAttachment(file: File, ticketId: string): Promise<string> {
   const timestamp = Date.now();
@@ -120,26 +125,45 @@ export async function POST(
       );
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const messageId = formData.get('messageId') as string | null;
-
-    if (!file) {
-      return NextResponse.json(
-        { error: 'File is required' },
-        { status: 400 }
-      );
-    }
-
     const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File size exceeds 10MB limit' },
-        { status: 400 }
-      );
-    }
+    let fileUrl: string;
+    let fileName: string;
+    let fileSize: number;
+    let fileType: string;
+    let messageId: string | null;
 
-    const fileUrl = await uploadAttachment(file, ticketId);
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      if (isLocalStorage()) {
+        return NextResponse.json({ error: 'Облачная загрузка не включена' }, { status: 409 });
+      }
+      const body = await request.json();
+      const key = normalizeStorageKey(String(body.key || ''));
+      fileName = String(body.fileName || '').trim().slice(0, 255);
+      fileSize = Number(body.fileSize);
+      fileType = String(body.fileType || '');
+      messageId = body.messageId ? String(body.messageId) : null;
+      if (!key.startsWith(`ticket-${ticketId}/`) || !fileName) {
+        return NextResponse.json({ error: 'Некорректный файл' }, { status: 400 });
+      }
+      if (!Number.isSafeInteger(fileSize) || fileSize <= 0 || fileSize > maxSize) {
+        return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 });
+      }
+      fileUrl = getStorageFileUrl('ticket-attachments', key);
+    } else {
+      const formData = await request.formData();
+      const file = formData.get('file') as File;
+      messageId = formData.get('messageId') as string | null;
+      if (!file) {
+        return NextResponse.json({ error: 'File is required' }, { status: 400 });
+      }
+      if (file.size > maxSize) {
+        return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 });
+      }
+      fileUrl = await uploadAttachment(file, ticketId);
+      fileName = file.name;
+      fileSize = file.size;
+      fileType = file.type;
+    }
 
     const currentTimestamp = new Date().toISOString();
 
@@ -148,10 +172,10 @@ export async function POST(
       .values({
         ticketId: parseInt(ticketId),
         messageId: messageId ? parseInt(messageId) : null,
-        fileName: file.name,
-        fileUrl: fileUrl,
-        fileSize: file.size,
-        fileType: file.type,
+        fileName,
+        fileUrl,
+        fileSize,
+        fileType,
         uploadedBy: session.userId,
         uploadedByType: 'artist',
         createdAt: currentTimestamp,

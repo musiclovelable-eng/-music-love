@@ -10,6 +10,7 @@ import { getSessionFromRequest } from '@/lib/auth';
 import {
   getLocalFileUrl,
   getLocalObjectPath,
+  getSupabaseDownloadUrl,
   isLocalStorage,
   normalizeStorageKey,
   STORAGE_BUCKETS,
@@ -122,8 +123,6 @@ async function serveFile(
   params: Promise<{ path: string[] }>,
   headOnly = false
 ) {
-  if (!isLocalStorage()) return responseError('Файл не найден', 404);
-
   try {
     const { path: segments } = await params;
     const [bucketName, ...keySegments] = segments || [];
@@ -137,6 +136,23 @@ async function serveFile(
     if (!PUBLIC_BUCKETS.has(bucket)) {
       const denied = await authorizePrivateFile(request, bucket, key);
       if (denied) return denied;
+    }
+
+    if (!isLocalStorage()) {
+      // Keep existing /api/files links working after migration. Public objects
+      // redirect to their CDN URL; private objects use a short-lived signed URL
+      // only after the authorization check above. Large files never pass
+      // through the serverless function response limit.
+      const downloadUrl = await getSupabaseDownloadUrl(bucket, key);
+      return new Response(null, {
+        status: 307,
+        headers: {
+          Location: downloadUrl,
+          'Cache-Control': PUBLIC_BUCKETS.has(bucket)
+            ? 'public, max-age=60'
+            : 'private, no-store',
+        },
+      });
     }
 
     const filePath = getLocalObjectPath(bucket, key);

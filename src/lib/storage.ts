@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
 import { createWriteStream } from 'node:fs';
 import { mkdir, rename, unlink } from 'node:fs/promises';
 import path from 'node:path';
@@ -14,6 +15,16 @@ export const STORAGE_BUCKETS = [
 ] as const;
 
 export type StorageBucket = (typeof STORAGE_BUCKETS)[number];
+
+const PUBLIC_STORAGE_BUCKETS = new Set<StorageBucket>([
+  'release-covers',
+  'release-tracks',
+  'avatars',
+]);
+
+export function isPublicStorageBucket(bucket: StorageBucket) {
+  return PUBLIC_STORAGE_BUCKETS.has(bucket);
+}
 
 export function isLocalStorage() {
   return process.env.STORAGE_DRIVER?.trim().toLowerCase() === 'local';
@@ -63,6 +74,59 @@ function encodeObjectPath(key: string) {
 
 export function getLocalFileUrl(bucket: StorageBucket, key: string) {
   return `/api/files/${bucket}/${encodeObjectPath(key)}`;
+}
+
+function getSupabaseBaseUrl() {
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!baseUrl || baseUrl.includes('placeholder.supabase.co')) {
+    throw new Error('Файловое хранилище не настроено');
+  }
+  return baseUrl;
+}
+
+function getSupabaseServiceClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || serviceKey === 'placeholder') {
+    throw new Error('Файловое хранилище не настроено');
+  }
+  return createClient(getSupabaseBaseUrl(), serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+export function getStorageFileUrl(bucket: StorageBucket, key: string) {
+  const normalizedKey = normalizeStorageKey(key);
+  if (isLocalStorage() || !isPublicStorageBucket(bucket)) {
+    return getLocalFileUrl(bucket, normalizedKey);
+  }
+  return `${getSupabaseBaseUrl()}/storage/v1/object/public/${bucket}/${encodeObjectPath(normalizedKey)}`;
+}
+
+export async function createSupabaseUploadUrl(bucket: StorageBucket, key: string) {
+  const normalizedKey = normalizeStorageKey(key);
+  const { data, error } = await getSupabaseServiceClient()
+    .storage
+    .from(bucket)
+    .createSignedUploadUrl(normalizedKey);
+  if (error || !data) {
+    throw new Error(`Не удалось подготовить загрузку: ${error?.message || 'unknown error'}`);
+  }
+  return { ...data, url: getStorageFileUrl(bucket, normalizedKey), key: normalizedKey };
+}
+
+export async function getSupabaseDownloadUrl(bucket: StorageBucket, key: string) {
+  const normalizedKey = normalizeStorageKey(key);
+  if (isPublicStorageBucket(bucket)) {
+    return getStorageFileUrl(bucket, normalizedKey);
+  }
+  const { data, error } = await getSupabaseServiceClient()
+    .storage
+    .from(bucket)
+    .createSignedUrl(normalizedKey, 60);
+  if (error || !data?.signedUrl) {
+    throw new Error(`Не удалось открыть файл: ${error?.message || 'unknown error'}`);
+  }
+  return data.signedUrl;
 }
 
 async function uploadToLocalStorage(
@@ -121,7 +185,7 @@ async function uploadToSupabase(
     throw new Error(`Ошибка загрузки в Supabase: ${details}`);
   }
 
-  return `${baseUrl}/storage/v1/object/public/${bucket}/${encodedPath}`;
+  return getStorageFileUrl(bucket, key);
 }
 
 export async function uploadToStorage(
@@ -179,7 +243,8 @@ export async function deleteFromStorage(bucket: StorageBucket, urlOrKey: string)
 
     const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const key = extractSupabaseKeyFromUrl(bucket, urlOrKey);
+    const key = extractSupabaseKeyFromUrl(bucket, urlOrKey)
+      || extractLocalKeyFromUrl(bucket, urlOrKey);
     if (!baseUrl || !serviceKey || !key) return false;
 
     const response = await fetch(`${baseUrl}/storage/v1/object/${bucket}/${key}`, {
