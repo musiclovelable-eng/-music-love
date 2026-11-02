@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIGHTVOLT — Обновление 2.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0a0a;
+    color: #e5e5e5;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ─── HERO ──────────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    border-bottom: 1px solid rgba(205, 121, 47, 0.15);
+    padding: 80px 0 60px;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: rgba(205, 121, 47, 0.12);
+    color: #cd792f;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #fff 0%, #cd792f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero p {
+    font-size: 18px;
+    color: #888;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* ─── SECTIONS ──────────────────────────────────────────────── */
+  .section {
+    padding: 60px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .section-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(205, 121, 47, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .section-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* ─── FEATURE CARDS ─────────────────────────────────────────── */
+  .feature {
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .feature:hover {
+    border-color: rgba(205, 121, 47, 0.25);
+  }
+
+  .feature-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .feature-emoji {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .feature-desc {
+    font-size: 14.5px;
+    color: #999;
+    line-height: 1.6;
+  }
+
+  .feature-desc strong {
+    color: #cd792f;
+    font-weight: 600;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-left: auto;
+  }
+
+  .tag-new { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+  .tag-fix { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+  .tag-improved { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+
+  /* ─── STAT GRID ─────────────────────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat {
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: #cd792f;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: #666;
+  }
+
+  /* ─── CALLOUT ───────────────────────────────────────────────── */
+  .callout {
+    background: rgba(205, 121, 47, 0.08);
+    border: 1px solid rgba(205, 121, 47, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 24px 0;
+    font-size: 14px;
+    color: #e8c4a0;
+  }
+
+  /* ─── FOOTER ────────────────────────────────────────────────── */
+  .footer {
+    padding: 48px 0;
+    text-align: center;
+    color: #555;
+    font-size: 14px;
+  }
+
+  .footer a {
+    color: #cd792f;
+    text-decoration: none;
+  }
+
+  .footer-logo {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  /* ─── RESPONSIVE ────────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 32px; }
+    .hero p { font-size: 15px; }
+    .section { padding: 40px 0; }
+    .feature { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── HERO ─────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-badge">🚀 Обновление 2.0 · Июнь 2026</div>
+    <h1>NIGHTVOLT</h1>
+    <p>Крупнейшее обновление личного кабинета артиста: верификация, система договоров, умные черновики и многое другое</p>
+  </div>
+</div>
+
+<!-- ─── STATS ────────────────────────────────────────────────── -->
+<div class="section" style="padding-top:40px;">
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><div class="stat-num">15+</div><div class="stat-label">Новых функций</div></div>
+      <div class="stat"><div class="stat-num">8</div><div class="stat-label">Исправлений</div></div>
+      <div class="stat"><div class="stat-num">94</div><div class="stat-label">Страницы</div></div>
+      <div class="stat"><div class="stat-num">0₽</div><div class="stat-label">Стоимость</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ВЕРИФИКАЦИЯ ──────────────────────────────────────────── -->
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">🛡️</div>
+      <h2>Верификация и договор</h2>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">📋</span> Верификация аккаунта <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Полностью новый раздел <strong>«Верификация»</strong> — пошаговая форма из 4 шагов с выбором роли (Артист / Лейбл), типа договора (Самозанятый / Физ.лицо / ИП) и страны. Поля формы автоматически меняются под Россию, Казахстан, Беларусь и другие страны. Прогресс сохраняется — можно вернуться в любой момент.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">📝</span> Система договоров <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        В профиле появился наглядный блок <strong>«Договор»</strong>. Пока договор не подписан (верификация не пройдена) — создание релизов заблокировано. После одобрения верификации администратором ограничения снимаются автоматически.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">✅</span> Синхронизация статуса <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Администратор видит все данные верификации в отдельной вкладке <strong>«Верификации»</strong>. При одобрении договор артиста активируется мгновенно.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── РЕГИСТРАЦИЯ ──────────────────────────────────────────── -->
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">✉️</div>
+      <h2>Регистрация и вход</h2>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">🔐</span> Подтверждение email <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        При регистрации на почту приходит <strong>6-значный код подтверждения</strong>. Введите его для активации аккаунта. Аккаунт активируется мгновенно, без ожидания одобрения администратора. Красивое письмо с логотипом NIGHTVOLT.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">🔄</span> Повторная отправка кода <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Если код не пришёл — запросите повторную отправку (доступна через 60 секунд). Можно подтвердить почту и при повторном входе.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ЧЕРНОВИКИ И РЕЛИЗЫ ───────────────────────────────────── -->
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">📝</div>
+      <h2>Черновики и релизы</h2>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">💾</span> Умное автосохранение <span class="tag tag-improved">Улучшено</span></div>
+      <div class="feature-desc">
+        Теперь черновик сохраняется <strong>через 3–4 секунды</strong> после любого изменения. Обложка, треки, персоны, все метаданные — всё сохраняется автоматически. Если закрыть вкладку и вернуться позже — данные восстановятся. Заметный индикатор показывает статус сохранения.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">✏️</span> Редактирование одобренных релизов <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Можно вносить изменения в уже <strong>одобренные и опубликованные релизы</strong>. После редактирования релиз отправляется на повторную модерацию, при этом <strong>UPC сохраняется</strong> и не сбрасывается.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">🔒</span> Деактивация релиза <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Новый статус <strong>«Деактивирован»</strong>. Артист может деактивировать релиз с указанием причины. Релиз не удаляется, остаётся в «Мои релизы». В админке отображается причина и дата деактивации.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">📋</span> Персоны и доли прав <span class="tag tag-fix">Исправлено</span></div>
+      <div class="feature-desc">
+        Исправлена потеря данных при редактировании: персоны релиза, персоны треков, доли авторских и смежных прав, версии треков (Explicit, Live, Cover, Remix, Instrumental) и дополнительные настройки теперь <strong>полностью сохраняются</strong> и отображаются как у артиста, так и в админке.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">🎛️</span> Отображение данных в админке <span class="tag tag-fix">Исправлено</span></div>
+      <div class="feature-desc">
+        Администратор теперь видит <strong>абсолютно все</strong> параметры релиза: тип (Single/EP/Album/Single Maxi/Mixtape), версия трека, дополнительные настройки (ранний старт в РФ, доставка в реальном времени), дата старта и все метаданные.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">🔍</span> Фильтр релизов по статусам <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        В админке добавлен фильтр: Все / На модерации / Повторная модерация / Одобренные / Опубликованные / Отклонённые / Требуются изменения / Деактивированные. Черновики артистов больше не видны в админке.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ПРОФИЛЬ ──────────────────────────────────────────────── -->
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">👤</div>
+      <h2>Профиль артиста</h2>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">📸</span> Загрузка аватара <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Артист может загрузить собственную аватарку (JPG, PNG, WebP до 5 МБ). Аватар отображается <strong>во всех местах системы</strong>: в меню, профиле, админке, карточках релизов.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">✏️</span> Редактирование профиля <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Можно изменить: имя, фамилию, email, социальные сети, биографию (до 5000 символов). Все данные мгновенно синхронизируются с админ-панелью. Псевдоним защищён от изменения.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">⚙️</span> Отдельная страница настроек <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Кнопка «Настройки» (иконка шестерёнки) в профиле и в выпадающем меню. Тема оформления (светлая/тёмная), снежинки и гирлянда перенесены на отдельную страницу.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ИНТЕРФЕЙС ────────────────────────────────────────────── -->
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">🎨</div>
+      <h2>Интерфейс и дизайн</h2>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">📱</span> Редизайн бокового меню <span class="tag tag-improved">Улучшено</span></div>
+      <div class="feature-desc">
+        Боковое меню стало <strong>компактнее и аккуратнее</strong>. Единый стиль иконок (тонкие линии, без заполнения), мягкие цвета, плавные hover-эффекты. Новый пункт «Верификация» в навигации.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">🔧</span> Технический перерыв <span class="tag tag-new">Новое</span></div>
+      <div class="feature-desc">
+        Суперадминистратор может включить режим обслуживания — красивый полноэкранный экран с причиной работ. Обновляется в реальном времени, доступ меняется мгновенно.
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-title"><span class="feature-emoji">⚡</span> Стабильность и скорость <span class="tag tag-improved">Улучшено</span></div>
+      <div class="feature-desc">
+        Обновлён Next.js до версии 15.5.19 (исправлены уязвимости). Убраны конфликтующие зависимости. Сайт собирается и работает <strong>быстрее и стабильнее</strong>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CALLOUT ──────────────────────────────────────────────── -->
+<div class="section" style="border-bottom: none;">
+  <div class="container">
+    <div class="callout">
+      💡 <strong>Важно:</strong> Если у вас возникли вопросы по новым функциям — напишите в поддержку через личный кабинет (раздел «Поддержка» → «Тикеты»). Команда NIGHTVOLT оперативно поможет.
+    </div>
+  </div>
+</div>
+
+<!-- ─── FOOTER ───────────────────────────────────────────────── -->
+<div class="footer">
+  <div class="container">
+    <div class="footer-logo">NIGHTVOLT</div>
+    <p>Label / Distributor · 2026</p>
+    <p style="margin-top:8px;"><a href="https://nightvolt-portal.vercel.app">nightvolt-portal.vercel.app</a></p>
+  </div>
+</div>
+
+</body>
+</html>
